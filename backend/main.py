@@ -32,13 +32,10 @@ async def analyze_math(file: UploadFile = File(None), text: str = Form(None)):
             ocr_data = {"steps": [text], "ocr_confidence": 1.0}
 
         # langchain agent invoking
-        agent_raw_response = verify(ocr_data)
-        
-        # Extraction of json
-        start = agent_raw_response.find('{')
-        end = agent_raw_response.rfind('}') + 1
-        print(agent_raw_response[start:end])
-        return json.loads(agent_raw_response[start:end])
+        result = verify(ocr_data)
+
+        # result is already a dict
+        return result
 
     except Exception as e:
         return {"error": str(e), "is_correct": False}
