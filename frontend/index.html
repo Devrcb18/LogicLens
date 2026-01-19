@@ -1,564 +1,346 @@
+<!DOCTYPE html>
 <html lang="en">
-
 <head>
-
     <meta charset="UTF-8">
-
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
     <title>LogicLens | Math Solver & Debugger</title>
-
+    
+    <!-- External Scripts -->
     <script src="https://cdn.tailwindcss.com"></script>
-
-    <link href="https://fonts.googleapis.com/css2?family=Space+Mono:ital,wght@0,400;0,700;1,400&display=swap"
-        rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Space+Mono:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 
-
-
     <style>
         :root {
-
             --bg: #eceae0;
-
             --text-main: #2d292a;
-
             --text-muted: #6b7280;
-
             --accent: #d1cfc7;
-
             --border: #2d292a;
-
             --btn-bg: #2d292a;
-
             --btn-text: #eceae0;
-
-            --glow: rgba(0, 0, 0, 0.05);
-
         }
-
-
 
         [data-theme="dark"] {
-
             --bg: #1c2529;
-
             --text-main: #28e08d;
-
             --text-muted: #94a3b8;
-
             --accent: #112a2a;
-
             --border: #28e08d;
-
             --btn-bg: #28e08d;
-
             --btn-text: #1c2529;
-
-            --glow: rgba(40, 224, 141, 0.1);
-
         }
 
-
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
 
         body {
-
             background-color: var(--bg);
-
             color: var(--text-main);
-
             font-family: 'Space Mono', monospace;
-
-            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-
+            transition: all 0.4s ease;
             min-height: 100vh;
-
             display: flex;
-
             flex-direction: column;
-
+            overflow-x: hidden;
         }
 
-
-
-        /* Wavy SVG Animation */
-
-        .wavy-svg {
-
+        header {
             width: 100%;
-
-            max-width: 600px;
-
-            height: auto;
-
-            overflow: visible;
-
+            padding: 2rem 4rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
         }
 
-        .wavy-path {
-
-            fill: none;
-
-            stroke: var(--text-main);
-
-            stroke-width: 15;
-
-            stroke-linecap: round;
-
-            stroke-dasharray: 1200;
-
-            stroke-dashoffset: 1200;
-
-            animation: drawWavy 2.5s forwards ease-in-out;
-
-            opacity: 0.15;
-
-        }
-
-        @keyframes drawWavy {
-            to {
-                stroke-dashoffset: 0;
-            }
-        }
-
-
-
-        /* Navigation Accents (The L-Brackets) */
-
-        .bracket {
-
-            position: absolute;
-
-            width: 40px;
-
-            height: 40px;
-
-            border-color: var(--border);
-
-            opacity: 0.6;
-
-            pointer-events: none;
-
-        }
-
-        .br-tl {
-            top: -10px;
-            left: -10px;
-            border-top: 2px solid;
-            border-left: 2px solid;
-        }
-
-        .br-tr {
-            top: -10px;
-            right: -10px;
-            border-top: 2px solid;
-            border-right: 2px solid;
-        }
-
-
-
-        /* Theme Toggle */
-
-        .toggle-track {
-
-            width: 55px;
-            height: 28px;
-
-            background: var(--accent);
-
-            border: 2px solid var(--border);
-
-            border-radius: 20px;
-
-            position: relative;
-
+        .logo-group {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
             cursor: pointer;
-
+            line-height: 1.2;
         }
 
-        .toggle-node {
+        .logo-symbol { font-size: 1.5rem; font-weight: bold; }
+        .logo-text { font-size: 1.2rem; font-weight: bold; letter-spacing: -1px; }
 
-            width: 20px;
-            height: 20px;
-
-            background: var(--btn-bg);
-
-            border-radius: 50%;
-
-            position: absolute;
-
-            top: 2px;
-            left: 3px;
-
-            transition: 0.3s transform;
-
+        .nav-right {
             display: flex;
             align-items: center;
-            justify-content: center;
+            gap: 2.5rem;
+        }
 
+        .nav-link {
+            text-decoration: none;
+            color: var(--text-main);
+            font-weight: bold;
+            border-bottom: 2px solid transparent;
+            transition: border 0.3s;
+        }
+        .nav-link:hover { border-bottom: 2px solid var(--border); }
+
+        .toggle-track {
+            width: 50px; height: 26px;
+            background: var(--accent);
+            border: 2px solid var(--border);
+            border-radius: 20px;
+            position: relative;
+            cursor: pointer;
+        }
+        .toggle-node {
+            width: 18px; height: 18px;
+            background: var(--btn-bg);
+            border-radius: 50%;
+            position: absolute;
+            top: 2px; left: 2px;
+            transition: 0.3s transform;
+            display: flex; align-items: center; justify-content: center;
             color: var(--btn-text);
             font-size: 10px;
-
         }
+        [data-theme="dark"] .toggle-node { transform: translateX(24px); }
 
-        [data-theme="dark"] .toggle-node {
-            transform: translateX(25px);
+        main {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 0 2rem;
+            position: relative;
         }
-
-
-
-        /* Glassmorphism Containers */
-
-        .glass-card {
-
-            background: var(--glow);
-
-            backdrop-filter: blur(8px);
-
-            border: 1px solid var(--border);
-
-            border-radius: 2rem;
-
-        }
-
-
 
         .view-section {
+            width: 100%;
+            max-width: 1000px;
             display: none;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
         }
 
-        .view-section.active {
-            display: block;
-            animation: slideUp 0.5s ease-out;
+        .view-section.active { display: flex; animation: fadeIn 0.6s ease; }
+
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        .hero-title {
+            font-size: clamp(2.5rem, 6vw, 4.5rem);
+            font-weight: 700;
+            line-height: 1.1;
+            margin-bottom: 3rem;
+            position: relative;
+            z-index: 2;
         }
 
-        @keyframes slideUp {
-            from {
-                opacity: 0;
-                transform: translateY(20px);
-            }
-
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
+        .wavy-bg {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 100vw;
+            pointer-events: none;
+            z-index: 1;
+            opacity: 0.15;
         }
 
+        .btn-main {
+            background: var(--btn-bg);
+            color: var(--btn-text);
+            padding: 1rem 2rem;
+            border: 2px solid var(--border);
+            border-radius: 8px;
+            font-weight: bold;
+            font-size: 1.1rem;
+            cursor: pointer;
+            transition: 0.2s;
+            z-index: 3;
+        }
+        .btn-main:hover { transform: translateY(-2px); opacity: 0.9; }
 
+        .glass-card {
+            width: 100%;
+            background: rgba(0,0,0,0.03);
+            border: 2px solid var(--border);
+            border-radius: 1.5rem;
+            padding: 3rem;
+            margin-top: 1rem;
+        }
 
-        /* Mobile Adjustments */
+        textarea {
+            width: 100%;
+            background: var(--accent);
+            border: 2px solid var(--border);
+            border-radius: 1rem;
+            padding: 1.5rem;
+            font-family: inherit;
+            font-size: 1.1rem;
+            color: var(--text-main);
+            resize: none;
+        }
 
-        @media (max-width: 768px) {
+        .result-layout {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 2rem;
+            width: 100%;
+            text-align: left;
+        }
 
-            h1 {
-                font-size: 1.75rem !important;
-            }
+        .status-box {
+            border: 2px solid var(--border);
+            padding: 1.5rem;
+            border-radius: 1rem;
+            margin-bottom: 1rem;
+        }
 
+        footer {
+            padding: 2.5rem;
+            text-align: center;
+            font-size: 10px;
+            letter-spacing: 3px;
+            opacity: 0.5;
+            text-transform: uppercase;
         }
     </style>
-
 </head>
-
 <body data-theme="light">
 
-
-
-    <!-- HEADER -->
-
-    <header class="p-4 md:p-8 flex justify-between items-center relative z-10">
-
-        <div class="flex items-center gap-3 cursor-pointer group" onclick="showView('landing')">
-
-            <div
-                class="w-10 h-10 border-2 border-[var(--border)] rounded-full flex items-center justify-center font-bold text-xl group-hover:rotate-12 transition-transform">
-                λ</div>
-
-            <span class="text-xl md:text-2xl font-bold tracking-tighter">LogicLens</span>
-
+    <header>
+        <div class="logo-group" onclick="showView('landing')">
+            <span class="logo-symbol">(λ)</span>
+            <span class="logo-text">LogicLens</span>
         </div>
 
-
-
-        <div class="flex items-center gap-4 md:gap-8">
-
+        <div class="nav-right">
             <div class="toggle-track" onclick="toggleTheme()">
-
                 <div class="toggle-node" id="theme-icon">☼</div>
-
             </div>
-
-            <a href="#" onclick="showView('about')" class="font-bold hover:underline hidden sm:block">About Us</a>
-
+            <a href="#" onclick="showView('about')" class="nav-link">About Us</a>
         </div>
-
     </header>
 
+    <main>
+      
+        <svg class="wavy-bg" viewBox="0 0 1200 300">
+            <path d="M0,150 Q150,50 300,150 T600,150 T900,150 T1200,150" fill="none" stroke="currentColor" stroke-width="10" />
+        </svg>
 
-
-    <main class="flex-grow container mx-auto px-6 py-4 md:py-12 relative z-10">
-
-
-
-        <!-- LANDING VIEW -->
-
-        <section id="landing" class="view-section active text-center">
-
-            <div class="relative py-20 flex flex-col items-center">
-
-                <svg class="wavy-svg absolute -z-10" viewBox="0 0 800 200">
-
-                    <path class="wavy-path" d="M0,100 Q100,0 200,100 T400,100 T600,100 T800,100" />
-
-                </svg>
-
-                <div class="relative p-6">
-
-                    <div class="bracket br-tl"></div>
-                    <div class="bracket br-tr"></div>
-
-                    <h1 class="text-3xl md:text-6xl font-bold leading-tight max-w-4xl">
-
-                        Capture the Problem,<br>Master the Solution
-
-                    </h1>
-
-                </div>
-
-            </div>
-
-            <button onclick="showView('input')"
-                class="mt-8 bg-[var(--btn-bg)] text-[var(--btn-text)] px-10 py-5 rounded-2xl text-xl font-bold shadow-xl hover:scale-105 transition active:scale-95">
-
-                Get Started →
-
-            </button>
-
+        <section id="landing" class="view-section active">
+            <h1 class="hero-title">
+                Capture the Problem,<br>Master the Solution
+            </h1>
+            <button class="btn-main" onclick="showView('input')">Get Started →</button>
         </section>
 
-
-
-        <!-- INPUT VIEW -->
-
-        <section id="input" class="view-section max-w-4xl mx-auto">
-
-            <div id="drop-zone"
-                class="glass-card p-10 md:p-20 text-center cursor-pointer border-dashed border-4 hover:border-solid transition-all group">
-
-                <div class="text-3xl md:text-5xl font-bold mb-4 group-hover:scale-105 transition">+ Upload Photo</div>
-
-                <p class="text-theme-muted opacity-60">Handwriting, Diagrams, or Equations</p>
-
+        <section id="input" class="view-section">
+            <div style="align-self: flex-start; margin-bottom: 1rem; font-weight: bold; opacity: 0.5;">STEP 1: INPUT PROBLEM</div>
+            
+            <div class="glass-card" id="drop-zone" style="border-style: dashed; cursor: pointer;">
+                <h2 style="font-size: 2.5rem; font-weight: bold;">+ Upload Photo</h2>
+                <p style="opacity: 0.6;">Handwritten equations or diagram screenshots</p>
                 <input type="file" id="fileInput" class="hidden" accept="image/*">
-
             </div>
 
+            <div style="margin: 2rem 0; font-weight: bold; font-style: italic; opacity: 0.3;">OR</div>
 
+            <textarea id="manualInput" rows="5" placeholder="Type Problem ........."></textarea>
 
-            <div class="flex items-center my-10 gap-4 opacity-40">
-
-                <div class="h-px bg-[var(--border)] flex-grow"></div>
-
-                <span class="font-bold italic text-2xl">OR</span>
-
-                <div class="h-px bg-[var(--border)] flex-grow"></div>
-
-            </div>
-
-
-
-            <textarea id="manualInput" placeholder="Type your problem here ........."
-                class="w-full bg-[var(--accent)] p-6 md:p-10 rounded-[2rem] border-2 border-[var(--border)] h-48 focus:outline-none focus:ring-4 focus:ring-[var(--border)]/20 text-xl font-mono transition-all"></textarea>
-
-
-
-            <button onclick="processMath()" id="analyzeBtn"
-                class="w-full mt-8 bg-[var(--btn-bg)] text-[var(--btn-text)] py-6 rounded-2xl font-bold text-xl flex justify-center items-center gap-4 hover:opacity-90">
-
+            <button class="btn-main" id="analyzeBtn" onclick="processMath()" style="width: 100%; margin-top: 2rem;">
                 <span id="btnText">ANALYZE MATH AGENT</span>
-
-                <div id="loader"
-                    class="hidden w-6 h-6 border-2 border-[var(--btn-text)] border-t-transparent rounded-full animate-spin">
-                </div>
-
             </button>
-
         </section>
 
-
-
-        <!-- RESULT VIEW -->
-
+        
         <section id="result" class="view-section">
-
-            <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-10 gap-4">
-
-                <div
-                    class="bg-[var(--accent)] px-6 py-3 rounded-full font-bold border border-[var(--border)] inline-flex items-center gap-2">
-
-                    <span class="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
-
-                    Solution Engine Ready
-
+            <div style="display: flex; justify-content: space-between; width: 100%; margin-bottom: 2rem; align-items: flex-end;">
+                <h2 style="font-size: 1.5rem; font-weight: bold; font-style: italic;">Your Solution is ready......</h2>
+                <div style="display: flex; gap: 1rem;">
+                    <button onclick="copyLatex()" class="btn-main" style="padding: 0.5rem 1rem; font-size: 0.9rem;">Copy LaTeX</button>
+                    <button onclick="downloadPDF()" class="btn-main" style="padding: 0.5rem 1rem; font-size: 0.9rem;">Download PDF</button>
                 </div>
-
-                <div class="flex gap-3 w-full md:w-auto">
-
-                    <button onclick="copyLatex()"
-                        class="flex-1 md:flex-none px-6 py-3 border-2 border-[var(--border)] rounded-xl font-bold hover:bg-[var(--accent)] transition">Copy
-                        LaTeX</button>
-
-                    <button onclick="downloadPDF()"
-                        class="flex-1 md:flex-none px-6 py-3 bg-[var(--btn-bg)] text-[var(--btn-text)] rounded-xl font-bold">Download
-                        PDF</button>
-
-                </div>
-
             </div>
 
-
-
-            <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-
-                <!-- Content Area -->
-
-                <div id="solution-container"
-                    class="lg:col-span-2 glass-card p-8 md:p-12 relative min-h-[350px] flex items-center justify-center border-2">
-
-                    <div class="absolute -left-4 top-10 w-12 h-12 bg-[var(--btn-bg)] rounded-xl shadow-lg rotate-3">
-                    </div>
-
-                    <div id="latexOutput" class="text-xl md:text-3xl leading-relaxed text-center italic w-full"></div>
-
+            <div class="result-layout">
+                <div id="solution-container" class="glass-card" style="display: flex; align-items: center; justify-content: center; min-height: 300px;">
+                    <div id="latexOutput" style="font-size: 1.5rem; width: 100%; overflow-x: auto;"></div>
                 </div>
 
-
-
-                <!-- Stats Sidebar -->
-
-                <div id="stats-sidebar" class="flex flex-col gap-6">
-
-                    <div class="glass-card p-6 border-2 border-dashed">
-
-                        <label class="text-xs font-bold uppercase tracking-widest opacity-60">Logic Confidence</label>
-
-                        <div id="confidence" class="text-5xl font-bold mt-2">--%</div>
-
+                <div class="sidebar">
+                    <div class="status-box">
+                        <label style="font-size: 10px; font-weight: bold; opacity: 0.6; text-transform: uppercase;">Confidence Score</label>
+                        <div id="confidence" style="font-size: 2.5rem; font-weight: bold;">--%</div>
                     </div>
-
-
-
-                    <div class="bg-white/5 p-6 rounded-[2rem] border-2 border-[var(--border)]">
-
-                        <label class="text-xs font-bold uppercase tracking-widest opacity-60">Tutor Feedback</label>
-
-                        <p id="explanation" class="mt-4 text-sm md:text-base leading-relaxed"></p>
-
+                    <div class="status-box">
+                        <label style="font-size: 10px; font-weight: bold; opacity: 0.6; text-transform: uppercase;">Tutor Feedback</label>
+                        <p id="explanation" style="font-size: 0.9rem; margin-top: 0.5rem;"></p>
                     </div>
-
-
-
-                    <div class="bg-[var(--btn-bg)] text-[var(--btn-text)] p-6 rounded-[2rem] shadow-xl">
-
-                        <label class="text-xs font-bold uppercase tracking-widest opacity-40">Pro Tip</label>
-
-                        <p id="suggestion" class="mt-3 text-sm italic"></p>
-
+                    <div class="status-box" style="background: var(--btn-bg); color: var(--btn-text);">
+                        <label style="font-size: 10px; opacity: 0.6; text-transform: uppercase;">Correction Suggestion</label>
+                        <p id="suggestion" style="font-size: 0.9rem; margin-top: 0.5rem; font-style: italic;"></p>
                     </div>
-
                 </div>
-
             </div>
-
+            <button onclick="showView('input')" style="margin-top: 2rem; font-weight: bold; border-bottom: 2px solid var(--border);">← New Problem</button>
         </section>
 
-        <section id="about" class="view-section max-w-3xl mx-auto text-center md:text-left">
-
-            <h2 class="text-4xl md:text-6xl font-bold mb-8">Debugger for Math.</h2>
-
-            <div class="glass-card p-8 md:p-12 border-2 text-lg md:text-xl leading-relaxed">
-
-                LogicLens isn't a calculator. It's a <strong>reasoning engine</strong>. By combining
-
-                Gemini's Vision API with Python-based LaTeX verification, we help you find the
-
-                exact step where your logic failed.
-
+    
+        <section id="about" class="view-section">
+            <h2 style="font-size: 3rem; font-weight: bold; margin-bottom: 2rem;">About LogicLens</h2>
+            <div class="glass-card" style="text-align: left; line-height: 1.8;">
+                LogicLens uses advanced AI to process handwritten math. It converts handwriting to LaTeX and identifies logical gaps in your reasoning to provide expert tutoring feedback.
             </div>
-
-            <button onclick="showView('landing')"
-                class="mt-12 text-xl font-bold border-b-4 border-[var(--border)] inline-block">← Back Home</button>
-
+            <button class="btn-main" onclick="showView('landing')" style="margin-top: 2rem;">← Back Home</button>
         </section>
-
-
-
     </main>
 
-
-
-    <footer class="p-8 text-center text-[10px] uppercase tracking-[0.4em] opacity-40">
-
-        LogicLens Framework // v2.0 // Multi-Platform Ready
-
+    <footer>
+        LOGICLENS FRAMEWORK 
     </footer>
 
-
+    <script>
+        window.MathJax = {
+            tex: {
+                inlineMath: [['$', '$'], ['\\(', '\\)']],
+                displayMath: [['$$', '$$'], ['\\[', '\\]']]
+            },
+            svg: { fontCache: 'global' }
+        };
+    </script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-svg.js"></script>
 
     <script>
-      
-window.MathJax = {
-    tex: {
-        inlineMath: [['$', '$'], ['\\(', '\\)']],
-        displayMath: [['$$', '$$'], ['\\[', '\\]']],
-        processEscapes: true
-    },
-    svg: { fontCache: 'global' }
-};
+   
+        function toggleTheme() {
+            const body = document.body;
+            const icon = document.getElementById('theme-icon');
+            const isDark = body.getAttribute('data-theme') === 'dark';
+            body.setAttribute('data-theme', isDark ? 'light' : 'dark');
+            icon.innerText = isDark ? '☼' : '🌙';
+        }
 
-const mjScript = document.createElement('script');
-mjScript.src = "https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-svg.js";
-mjScript.async = true;
-document.head.appendChild(mjScript);
+        function showView(viewId) {
+            document.querySelectorAll('.view-section').forEach(v => v.classList.remove('active'));
+            document.getElementById(viewId).classList.add('active');
+            window.scrollTo(0,0);
+        }
 
-function toggleTheme() {
-    const body = document.body;
-    const icon = document.getElementById('theme-icon');
-    const isDark = body.getAttribute('data-theme') === 'dark';
-    body.setAttribute('data-theme', isDark ? 'light' : 'dark');
-    icon.innerText = isDark ? '☼' : '🌙';
-
-    const path = document.querySelector('.wavy-path');
-    if (path) {
-        path.style.animation = 'none';
-        path.offsetHeight; 
-        path.style.animation = null;
-    }
-}
-
-function showView(viewId) {
-    document.querySelectorAll('.view-section').forEach(v => v.classList.remove('active'));
-    const target = document.getElementById(viewId);
-    if (target) target.classList.add('active');
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-}
-async function processMath() {
-    const btn = document.getElementById('analyzeBtn');
-    const loader = document.getElementById('loader');
+        
+        async function processMath() {
     const btnText = document.getElementById('btnText');
     const fileInput = document.getElementById('fileInput');
     const manualInput = document.getElementById('manualInput');
-
+    
     if (!fileInput.files[0] && !manualInput.value.trim()) {
-        alert("Please upload an image or type a problem.");
+        alert("Please provide an image or type a problem.");
         return;
     }
 
-    // UI Loading State
-    btn.disabled = true;
-    loader.classList.remove('hidden');
-    btnText.innerText = "AGENT IS ANALYZING...";
-
+    btnText.innerText = "ANALYZING MATH...";
+    
     const formData = new FormData();
     if (fileInput.files[0]) {
         formData.append('file', fileInput.files[0]);
@@ -567,117 +349,69 @@ async function processMath() {
     }
 
     try {
-        const response = await fetch('/analyze', {
-            method: 'POST',
-            body: formData
-        });
-
-        if (!response.ok) throw new Error("Server communication failed.");
+        const response = await fetch('/analyze', { method: 'POST', body: formData });
+        
+        
+        if (!response.ok) {
+            const errorText = await response.text();
+            throw new Error(`Server Error (${response.status}): ${errorText}`);
+        }
 
         const data = await response.json();
-        console.log("Raw Data Received:", data); 
         renderResults(data);
-
     } catch (error) {
-        console.error("Fetch Error:", error);
-        alert("Connection Failed: Ensure your FastAPI server is running at the correct address.");
+        console.error("Detailed Error:", error);
+        alert("Analysis failed: " + error.message);
     } finally {
-        btn.disabled = false;
-        loader.classList.add('hidden');
         btnText.innerText = "ANALYZE MATH AGENT";
     }
 }
 
-function renderResults(data) {
-    const outputDiv = document.getElementById('latexOutput');
-    const explanationDiv = document.getElementById('explanation');
-    const suggestionDiv = document.getElementById('suggestion');
-    const confidenceDiv = document.getElementById('confidence');
-    if (window.MathJax && window.MathJax.typesetClear) {
-        window.MathJax.typesetClear([outputDiv]);
-    }
-    const latex = data.solution || (data.steps ? data.steps.join(" \\\\ ") : "No solution text");
-    explanationDiv.innerText = data.explanation || "No explanation provided.";
-    suggestionDiv.innerText = data.suggestion || "No pro-tips available.";
-    
-    const conf = data.total_confidence || data.ocr_confidence || 0;
-    confidenceDiv.innerText = Math.round(conf * 100) + "%";
-    outputDiv.innerHTML = `\\[ ${latex} \\]`;
+        function renderResults(data) {
+            if (data.error) {
+                alert("Error: " + data.error);
+                return;
+            }
 
-    // Process with MathJax
-    if (window.MathJax && window.MathJax.typesetPromise) {
-        window.MathJax.typesetPromise([outputDiv]).then(() => {
             showView('result');
-        }).catch(err => {
-            console.error("MathJax Error:", err);
-            showView('result');
-        });
-    } else {
-        showView('result');
-    }
-}
+            const latexOutput = document.getElementById('latexOutput');
+            latexOutput.innerHTML = `$$ \\boxed{ ${data.solution || ''} } $$`;
 
-function copyLatex() {
-    const text = document.getElementById('latexOutput').innerText;
-    navigator.clipboard.writeText(text).then(() => {
-        alert("LaTeX copied to clipboard!");
-    });
-}
+            document.getElementById('confidence').innerText = 
+                data.total_confidence ? (data.total_confidence * 100).toFixed(0) + "%" : "90%";
+            
+            document.getElementById('explanation').innerText = data.explanation || "No issues found.";
+            document.getElementById('suggestion').innerText = data.suggestion || "Excellent work!";
 
-async function downloadPDF() {
-    const { jsPDF } = window.jspdf;
-    const doc = new jsPDF('p', 'mm', 'a4');
-    const element = document.getElementById('solution-container');
+            // MathJax to process the new HTML
+            if (window.MathJax && window.MathJax.typesetPromise) {
+                window.MathJax.typesetPromise([latexOutput]).catch((err) => console.log(err));
+            }
+        }
 
-    try {
-       
-        const canvas = await html2canvas(element, { scale: 2, backgroundColor: null });
-        const imgData = canvas.toDataURL('image/png');
-        
-        // Header
-        doc.setFont("courier", "bold");
-        doc.setFontSize(18);
-        doc.text("LogicLens Solution Report", 20, 20);
-        doc.setLineWidth(0.5);
-        doc.line(20, 23, 190, 23);
+        function copyLatex() {
+            const text = document.getElementById('latexOutput').innerText;
+            navigator.clipboard.writeText(text).then(() => alert("LaTeX Copied!"));
+        }
 
-        // Add the Math image
-        const imgWidth = 170;
-        const imgHeight = (canvas.height * imgWidth) / canvas.width;
-        doc.addImage(imgData, 'PNG', 50, 50, imgWidth, imgHeight);
+        async function downloadPDF() {
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF('p', 'mm', 'a4');
+            const element = document.getElementById('solution-container');
+            
+            const canvas = await html2canvas(element);
+            const imgData = canvas.toDataURL('image/png');
+            doc.text("LogicLens Solution Report", 20, 20);
+            doc.addImage(imgData, 'PNG', 15, 30, 180, 0);
+            doc.save("LogicLens_Solution.pdf");
+        }
 
-        // Sidebar stats
-        let yPos = 30 + imgHeight + 15;
-        doc.setFontSize(12);
-        doc.text(`CONFIDENCE: ${document.getElementById('confidence').innerText}`, 20, yPos);
-        
-        yPos += 15;
-        doc.text("TUTOR FEEDBACK:", 20, yPos);
-        doc.setFont("courier", "normal");
-        const feedback = doc.splitTextToSize(document.getElementById('explanation').innerText, 170);
-        doc.text(feedback, 20, yPos + 7);
-
-        yPos += (feedback.length * 7) + 10;
-        doc.setFont("courier", "bold");
-        doc.text("PRO TIP:", 20, yPos);
-        doc.setFont("courier", "italic");
-        const tip = doc.splitTextToSize(document.getElementById('suggestion').innerText, 170);
-        doc.text(tip, 20, yPos + 7);
-
-        doc.save("LogicLens_Solution.pdf");
-    } catch (err) {
-        console.error("PDF Generation Error:", err);
-        alert("Could not generate PDF.");
-    }
-}
-
-// Event Listeners
-document.getElementById('drop-zone').onclick = () => document.getElementById('fileInput').click();
-document.getElementById('fileInput').onchange = (e) => {
-    if (e.target.files.length > 0) processMath();
-};
+        document.getElementById('drop-zone').onclick = () => document.getElementById('fileInput').click();
+        document.getElementById('fileInput').onchange = (e) => {
+            if(e.target.files.length > 0) {
+                document.querySelector('#drop-zone p').innerText = "File selected: " + e.target.files[0].name;
+            }
+        };
     </script>
-
 </body>
-
 </html>
