@@ -5,8 +5,8 @@ import shutil
 import os
 import json
 import uvicorn
-from utils import process_handwritten_images
-from agent_logic import verify
+from backend.utils import process_handwritten_images
+from backend.agent_logic import verify
 
 app = FastAPI()
 
