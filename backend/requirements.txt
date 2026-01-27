@@ -1,9 +1,0 @@
-fastapi
-uvicorn
-python-multipart
-langchain-google-genai
-langchain-groq
-langgraph
-python-dotenv
-opencv-python-headless
-numpy
