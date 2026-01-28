@@ -1,31 +1,41 @@
-from langchain_google_genai import ChatGoogleGenerativeAI
+from langchain_groq import ChatGroq
 from langchain.messages import SystemMessage,HumanMessage
 import os
 import json
 import re
 from dotenv import load_dotenv
 load_dotenv()
-os.environ['GOOGLE_API_KEY'] = os.getenv('GOOGLE_API_KEY')
 os.environ['groq_api_key'] = os.getenv('GROQ_API_KEY')
-# llm=ChatGoogleGenerativeAI(model="gemini-1.5-flash-latest", temperature=0)
-from langchain_groq import ChatGroq
-llm=ChatGroq(model="llama-3.3-70b-versatile", temperature=0.34)
+llm=ChatGroq(model="llama-3.3-70b-versatile", temperature=0)
 system_message_content = """
-You are the 'LogicLens' Math Debugger.
+You are the 'LogicLens' Advanced Math Solver.
+
+CRITICAL INSTRUCTIONS:
+1. The OCR data may contain syntax errors like unmatched brackets () or {}. Fix these in your 'solution' field.
+2. The 'solution' field MUST be a string with each step on a new line.
+3. Each line should be a complete LaTeX mathematical expression.
+4. Steps must be separated by actual newline characters (\n).
+5. Use proper LaTeX commands for fractions, exponents, etc.
+6. Include all intermediate steps in the derivation.
+7. Handle all types of problems: algebra, calculus (derivatives, integrals), trigonometry, complex numbers, etc.
+8. Example format:
+y = (2x^{3} - 3x^{2} - x - 1)^{10}
+\\frac{dy}{dx} = 10(2x^{3} - 3x^{2} - x - 1)^{9} \\cdot (6x^{2} - 6x - 1)
+= 60x^{2}(2x^{3} - 3x^{2} - x - 1)^{9} - 60x(2x^{3} - 3x^{2} - x - 1)^{9} - 10(2x^{3} - 3x^{2} - x - 1)^{9}
 
 INPUT: You will receive a list of LaTeX steps and an OCR confidence score.
 MISSION:
-- Audit every transition. Identify EXACTLY which step (index) violates math rules.
-- Don't just solve it; explain the logic gap (e.g., "You forgot to flip the sign").
-- Provide a 'Tutor Suggestion' to help the student learn.
+- If the steps are correct, provide the complete solution with all steps.
+- If incorrect, identify the error and provide the corrected full solution.
+- Always provide a complete, step-by-step solution.
 
 Strictly Return ONLY a valid JSON object with this exact structure:
 {
   "is_correct": bool,
   "error_step_index": int,
-  "explanation": "Why it's wrong",
+  "explanation": "Why it's wrong or confirmation if correct",
   "suggestion": "How to think about it next time",
-  "solution": "correct LaTeX solution",
+  "solution": "LaTeX solution with steps separated by newlines",
   "total_confidence": float
 }
 """
@@ -40,7 +50,10 @@ def verify(ocr_data):
 
     # Try to parse the entire content as JSON
     try:
-        return json.loads(content)
+        data = json.loads(content)
+        # Override total_confidence with ocr_confidence
+        data["total_confidence"] = ocr_data.get("ocr_confidence", 0.9)
+        return data
     except json.JSONDecodeError:
         pass
 
@@ -49,10 +62,12 @@ def verify(ocr_data):
     if match:
         json_str = match.group(1).strip()
         try:
-            return json.loads(json_str)
+            data = json.loads(json_str)
+            data["total_confidence"] = ocr_data.get("ocr_confidence", 0.9)
+            return data
         except json.JSONDecodeError:
             pass
 
     # Fallback: return error
-    return {"error": "Failed to parse AI response", "is_correct": False}
+    return {"error": "Failed to parse AI response", "is_correct": False, "total_confidence": ocr_data.get("ocr_confidence", 0.9)}
     
