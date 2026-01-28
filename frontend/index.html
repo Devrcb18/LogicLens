@@ -195,6 +195,8 @@
             padding: 1.5rem;
             border-radius: 1rem;
             margin-bottom: 1rem;
+            word-break: break-word;
+            overflow-wrap: break-word;
         }
 
         footer {
@@ -211,7 +213,7 @@
 
     <header>
         <div class="logo-group" onclick="showView('landing')">
-            <span class="logo-symbol">(λ)</span>
+            <span class="logo-symbol">λ</span>
             <span class="logo-text">LogicLens</span>
         </div>
 
@@ -224,11 +226,12 @@
     </header>
 
     <main>
-      
+        <!-- WAVY BACKGROUND SVG -->
         <svg class="wavy-bg" viewBox="0 0 1200 300">
             <path d="M0,150 Q150,50 300,150 T600,150 T900,150 T1200,150" fill="none" stroke="currentColor" stroke-width="10" />
         </svg>
 
+        <!-- LANDING SECTION -->
         <section id="landing" class="view-section active">
             <h1 class="hero-title">
                 Capture the Problem,<br>Master the Solution
@@ -236,6 +239,7 @@
             <button class="btn-main" onclick="showView('input')">Get Started →</button>
         </section>
 
+        <!-- INPUT SECTION -->
         <section id="input" class="view-section">
             <div style="align-self: flex-start; margin-bottom: 1rem; font-weight: bold; opacity: 0.5;">STEP 1: INPUT PROBLEM</div>
             
@@ -254,7 +258,7 @@
             </button>
         </section>
 
-        
+        <!-- RESULT SECTION -->
         <section id="result" class="view-section">
             <div style="display: flex; justify-content: space-between; width: 100%; margin-bottom: 2rem; align-items: flex-end;">
                 <h2 style="font-size: 1.5rem; font-weight: bold; font-style: italic;">Your Solution is ready......</h2>
@@ -265,8 +269,8 @@
             </div>
 
             <div class="result-layout">
-                <div id="solution-container" class="glass-card" style="display: flex; align-items: center; justify-content: center; min-height: 300px;">
-                    <div id="latexOutput" style="font-size: 1.5rem; width: 100%; overflow-x: auto;"></div>
+                <div id="solution-container" class="glass-card" style="min-height: 300px; padding: 1rem; text-align: left;">
+                    <div id="latexOutput" style="font-size: 1rem;"></div>
                 </div>
 
                 <div class="sidebar">
@@ -287,7 +291,7 @@
             <button onclick="showView('input')" style="margin-top: 2rem; font-weight: bold; border-bottom: 2px solid var(--border);">← New Problem</button>
         </section>
 
-    
+        <!-- ABOUT SECTION -->
         <section id="about" class="view-section">
             <h2 style="font-size: 3rem; font-weight: bold; margin-bottom: 2rem;">About LogicLens</h2>
             <div class="glass-card" style="text-align: left; line-height: 1.8;">
@@ -302,6 +306,7 @@
     </footer>
 
     <script>
+        /* MATHJAX CONFIGURATION */
         window.MathJax = {
             tex: {
                 inlineMath: [['$', '$'], ['\\(', '\\)']],
@@ -313,7 +318,17 @@
     <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-svg.js"></script>
 
     <script>
-   
+        // Add event listener for drop-zone
+        document.getElementById('drop-zone').addEventListener('click', () => {
+            document.getElementById('fileInput').click();
+        });
+
+        // Optional: Handle file selection display
+        document.getElementById('fileInput').addEventListener('change', (e) => {
+            if (e.target.files[0]) {
+                document.querySelector('#drop-zone h2').innerText = 'File Selected: ' + e.target.files[0].name;
+            }
+        });
         function toggleTheme() {
             const body = document.body;
             const icon = document.getElementById('theme-icon');
@@ -328,7 +343,6 @@
             window.scrollTo(0,0);
         }
 
-        
         async function processMath() {
     const btnText = document.getElementById('btnText');
     const fileInput = document.getElementById('fileInput');
@@ -351,9 +365,8 @@
     try {
         const response = await fetch('/analyze', { method: 'POST', body: formData });
         
-        
         if (!response.ok) {
-            const errorText = await response.text();
+            const errorText = await response.text(); // Get the raw error
             throw new Error(`Server Error (${response.status}): ${errorText}`);
         }
 
@@ -367,45 +380,90 @@
     }
 }
 
-        function renderResults(data) {
-            if (data.error) {
-                alert("Error: " + data.error);
-                return;
-            }
+    function renderResults(data) {
+    if (data.error) {
+        alert("Error: " + data.error);
+        return;
+    }
+    showView('result');
 
-            showView('result');
-            const latexOutput = document.getElementById('latexOutput');
-            latexOutput.innerHTML = `$$ \\boxed{ ${data.solution || ''} } $$`;
+    const latexOutput = document.getElementById('latexOutput');
+    const confidenceEl = document.getElementById('confidence');
+    const explanationEl = document.getElementById('explanation');
+    const suggestionEl = document.getElementById('suggestion');
 
-            document.getElementById('confidence').innerText = 
-                data.total_confidence ? (data.total_confidence * 100).toFixed(0) + "%" : "90%";
-            
-            document.getElementById('explanation').innerText = data.explanation || "No issues found.";
-            document.getElementById('suggestion').innerText = data.suggestion || "Excellent work!";
+    // 2. Get and Clean Solution String
+    let solution = data.solution || '';
+    
+    // Remove markdown backticks and existing math delimiters
+    solution = solution.replace(/```latex|```/g, '').trim();
+    solution = solution.replace(/^\$\$|\$\$$/g, '').replace(/^\$|\$$/g, '');
 
-            // MathJax to process the new HTML
-            if (window.MathJax && window.MathJax.typesetPromise) {
-                window.MathJax.typesetPromise([latexOutput]).catch((err) => console.log(err));
-            }
-        }
+    // 3. Fix Bracket Mismatches (Common cause of "Math Input Error")
+    const openParen = (solution.match(/\(/g) || []).length;
+    const closeParen = (solution.match(/\)/g) || []).length;
+    const openBrace = (solution.match(/\{/g) || []).length;
+    const closeBrace = (solution.match(/\}/g) || []).length;
 
+    if (openParen !== closeParen) {
+        if (openParen > closeParen) solution += ")".repeat(openParen - closeParen);
+        else solution = "(".repeat(closeParen - openParen) + solution;
+    }
+    
+    // Very important: MathJax fails hard on missing curly braces
+    if (openBrace !== closeBrace) {
+        if (openBrace > closeBrace) solution += "}".repeat(openBrace - closeBrace);
+    }
+
+    // 4. Update UI Elements
+    confidenceEl.innerText = data.total_confidence
+        ? Math.round(data.total_confidence * 100) + "%"
+        : "90%";
+
+    explanationEl.innerHTML = (data.explanation || "No issues found.").replace(/\n/g, '<br>');
+    suggestionEl.innerHTML = (data.suggestion || "Excellent work!").replace(/\n/g, '<br>');
+
+    // 5. Render each LaTeX step as separate display block
+    const steps = solution.split('\n').filter(step => step.trim());
+    latexOutput.innerHTML = steps.map(step => `\\[ ${step.trim()} \\]`).join('<br>');
+
+    if (window.MathJax && window.MathJax.typesetPromise) {
+        window.MathJax.typesetPromise([latexOutput]).catch((err) => {
+            console.error("MathJax Rendering Error:", err);
+            latexOutput.innerHTML = `<span style='color:red;'>LaTeX Syntax Error in AI Response</span><br><pre>${solution}</pre>`;
+        });
+    }
+}
+        /* UTILITIES */
         function copyLatex() {
             const text = document.getElementById('latexOutput').innerText;
             navigator.clipboard.writeText(text).then(() => alert("LaTeX Copied!"));
         }
 
         async function downloadPDF() {
+
             const { jsPDF } = window.jspdf;
+
             const doc = new jsPDF('p', 'mm', 'a4');
+
             const element = document.getElementById('solution-container');
+
             
+
             const canvas = await html2canvas(element);
+
             const imgData = canvas.toDataURL('image/png');
+
             doc.text("LogicLens Solution Report", 20, 20);
+
             doc.addImage(imgData, 'PNG', 15, 30, 180, 0);
+
             doc.save("LogicLens_Solution.pdf");
+
         }
 
+
+        // File Selection logic
         document.getElementById('drop-zone').onclick = () => document.getElementById('fileInput').click();
         document.getElementById('fileInput').onchange = (e) => {
             if(e.target.files.length > 0) {
